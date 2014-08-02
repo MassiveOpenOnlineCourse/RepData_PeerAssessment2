@@ -1,0 +1,611 @@
+# Impact of Weather Events against Population Health and the Economy of the United States
+
+---
+```{r echo=FALSE, warning=FALSE}
+# load necessary libaries
+library(ggplot2)
+library(grid)
+library(gridExtra)
+library(lubridate)
+```
+
+## Synopsis
+The following anaylsis looks into the effects of natural weather phenomena in the United States. Data from the National Oceanic and Atmospheric Administration (NOAA) is used to determine the various consequences of weather events such as majors storms that were experienced across the US. Data measured from the occurrance of such events were then used to measure the impact they had on the health of the United States population as well as their effects on the economy across the country.
+
+## Data Processing
+The following steps depict the process in which the raw Storm data is read and prepared for analysis.
+
+1. The Storm data is uncompressed and then read as shown.
+   "StormData.csv.bz2" is the original compressed file with the NOAA data.
+```{r echo=TRUE, cache=TRUE}
+    originalData <- read.csv(bzfile("StormData.csv.bz2"))
+```
+
+2. The following is a tabluar representation of the raw data
+```{r echo=FALSE}
+    head(originalData)
+```
+
+3. The follow shows all the types of weather phenomena in the data.
+```{r, echo=TRUE, cache=TRUE}
+    originalData$INDEX <- 1
+    eventTypes <- aggregate(data=originalData, INDEX~EVTYPE, FUN=sum)
+    eventTypes <- eventTypes[order(eventTypes$EVTYPE),]
+```
+```{r echo=FALSE}
+    eventTypes[1:20,1]
+```
+
+It can been seen that the listed types of phenomena contain many duplicates of varying issues, for example, spelling errors, mixture of random uppercase and lowercase alphabets and events of the same type but sub-categorized.
+
+The following procedures are then performed in an attempt to solve or reduce the above issues.
+
+```{r echo=TRUE, cache=TRUE}
+workData <- originalData
+
+workData$EVTYPE <- lapply(workData$EVTYPE, function(v) {
+  return(toupper(v))
+})
+workData$EVTYPE <- as.factor(unlist(workData$EVTYPE))
+
+workData$EVTYPE <- gsub("^\\s+|\\s+$", "", workData$EVTYPE)
+workData$EVTYPE <- gsub("^AVALANCE", "AVALANCHE", workData$EVTYPE)
+workData$EVTYPE <- gsub("^BITTER WIND CHILL TEMPERATURES", "BITTER WIND CHILL", workData$EVTYPE)
+workData$EVTYPE <- gsub("^BEACH EROSIN", "BEACH EROSION", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(BEACH EROSION).*", "BEACH EROSION", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(BITTER WIND CHILL).*", "BITTER WIND CHILL", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(BLIZZARD).*", "BLIZZARD", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(BLOWING SNOW).*", "BLIZZARD", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(COASTAL FLOOD).*", "COASTAL FLOOD", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(COLD).*", "COLD/WIND CHILL", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(DRY).*", "DRY", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(EXTREME WIND).*", "EXTREME WIND", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(EXTREME COLD).*", "EXTREME COLD/WIND CHILL", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(DRY).*", "DRY MICROBURST", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(MICROBURST).*", "DRY MICROBURST", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(DUST DEVIL).*", "DUST DEVIL", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(DUST STORM).*", "DUST STORM", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(EXCESSIVE HEAT).*", "EXCESSIVE HEAT", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(EXCESSIVE SNOW).*", "BLIZZARD", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(EXTREME HEAT).*", "EXCESSIVE HEAT", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(FLASH FLOO).*", "FLASH FLOOD", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(FLOOD).*", "FLOOD", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(FOG).*", "1FREEzING FOG", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(FREEzING FOG).*", "1FREEzING FOG", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(FROST).*", "FROST/FREEZING", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(FREEZ).*", "FROST/FREEZING", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(1FREEzING FOG).*", "FREEzING FOG", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(FUNNEL).*", "FUNNEL CLOUD", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(GLAZE).*", "GLAZE", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(GUSTY).*", "GUSTY WIND", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(HAIL).*", "HAIL", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(HEAT).*", "HEAT", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(HEAVY RAIN).*", "HEAVY RAIN", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(HEAVY PRECIPITATION).*", "HEAVY RAIN", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(HEAVY SNOW).*", "HEAVY SNOW", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(HEAVY SURF).*", "HIGH SURF", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(HIGH SURF).*", "HIGH SURF", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(HIGH WIND).*", "HIGH WIND", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(HURRICANE).*", "HURRICANE", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(ICE|ICY).*", "ICE STORM", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(LAKE EFFECT).*", "LAKE-EFFECT SNOW", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(LIGHT SNOW).*", "LIGHT SNOW", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(LIGHTNING).*", "LIGHTNING", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(LIGHTING).*", "LIGHTNING", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(MICROBURST).*", "DRY MICROBURST", workData$EVTYPE)
+workData$EVTYPE <- gsub("(TSTM)", "THUNDERSTORM", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(MUD).*", "MUD SLIDE", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(RIP CURRENT).*", "RIP CURRENT", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(SNOW).*", "SNOW", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(STRONG WIND).*", "STRONG WIND", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(STORM SURGE).*", "STORM SURGE", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(THUNDERSTORM).*", "THUNDERSTORM WIND", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(TORNADO).*", "TORNADO", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(TSTM).*", "THUNDERSTORM WIND", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(WATERSPOUT).*", "WATERSPOUT", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(WILD).*", "WILDFIRE", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(WIND).*", "WIND", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(WINTER STORM).*", "WINTER STORM", workData$EVTYPE)
+workData$EVTYPE <- gsub("^(WINTER WEATHER).*", "WINTER WEATHER", workData$EVTYPE)
+
+```
+  
+After filtering and modified the event type names as necessary, the event type list have been changed to the following which will then be used for the analysis.
+```{r echo=TRUE, cache=TRUE}
+    eventTypes <- aggregate(data=workData, INDEX~EVTYPE, FUN=sum)
+    eventTypes <- eventTypes[order(eventTypes$EVTYPE),]
+```
+```{r echo=FALSE}
+    eventTypes[1:20,1]
+```
+
+>Across the United States, which types of events (as indicated in the EVTYPE variable) are most harmful with respect to population health?
+
+The above question asks for the impact that the various weather phenomena have on the health of the United States population.
+
+In light of the above question, this analysis will provide a view on which of the weather phenomena caused the most harm to people.
+
+The raw data is processed to gather data on the Casualty rate of the various weather phenomena. The process data is then ranked in the order of fatalities then injuries.
+
+  1. Pre-analysis preparation
+    ```{r echo=TRUE}
+    # This is a function to add both fatality and injury numbers
+    CasualtyCalculation <- function(fatality, injury) {
+      return (as.numeric(fatality) + as.numeric(injury))
+    }
+    ```
+    
+  2. Fatality data is processed as shown:
+    ```{r echo=TRUE, cache=TRUE}
+    eventFatalities <- aggregate(data=workData, FATALITIES~EVTYPE, FUN=sum)
+    
+    rankedEventFatalities <- eventFatalities[order(-eventFatalities$FATALITIES),]
+    ```
+    ```{r echo=FALSE}
+    rownames(rankedEventFatalities) <- NULL
+    ```
+    
+     The top 10 phenomena causing the highest fatality rates are as follows:
+    ```{r echo=FALSE}
+    rankedEventFatalities[1:10,]
+    ```
+      
+  3. Injury data is processed as shown:
+    ```{r echo=TRUE, cache=TRUE}
+    eventInjuries <- aggregate(data=workData, INJURIES~EVTYPE, FUN=sum)
+    
+    rankedEventInjuries <- eventInjuries[order(-eventInjuries$INJURIES),]
+    ```
+    ```{r echo=FALSE}
+    rownames(rankedEventInjuries) <- NULL
+    ```
+    
+     The top 10 phenomena causing the highest injury rates are as follows:
+    ```{r echo=FALSE}
+    rankedEventInjuries[1:10,]
+    ```
+    
+  4. The fatality and injury numbers are then combined as shown:
+    ```{r echo=TRUE, cache=TRUE}
+    eventCasualties <- merge(eventFatalities, eventInjuries, by=c("EVTYPE"))
+
+    valueCasualtyFull <- apply(
+      X=eventCasualties,
+      MARGIN=1,
+      FUN=function(data) CasualtyCalculation(data["FATALITIES"],data["INJURIES"])
+    )
+
+    valueCasualtyFullNum <- as.numeric(as.character(valueCasualtyFull))
+
+    eventCasualties$TOTAL <- valueCasualtyFullNum
+    
+    rankedEventCasualties <- eventCasualties[order(-eventCasualties$TOTAL),]
+    ```
+    ```{r echo=FALSE}
+    rownames(rankedEventCasualties) <- NULL
+    ```
+    
+     The following are the top 10 weather phenomena causing the highest total Casualty rates.
+    ```{r echo=FALSE}
+    rankedEventCasualties[1:10,]
+    ```
+    
+  5. A visual representation of the data as shown previously:
+    ```{r echo=TRUE, fig.width=15, fig.height=10}
+        eventFatalitiesPlot <- ggplot(
+              rankedEventFatalities[1:10,],
+              aes(
+                x=reorder(EVTYPE, -FATALITIES),
+                y=FATALITIES
+              )
+            ) +
+            ggtitle("Fatality Rates") +
+            geom_bar(stat = "identity") +
+            geom_text(
+              aes(
+                label=ceiling(FATALITIES),
+                hjust=0.5,
+                vjust=1
+              ),
+              color="red"
+            ) +
+            xlab("Weather Phenomena") +
+            ylab("Total Fatality")
+
+        eventInjuriesPlot <- ggplot(
+              rankedEventInjuries[1:10,],
+              aes(
+                x=reorder(EVTYPE, -INJURIES),
+                y=INJURIES
+              )
+            ) +
+            ggtitle("Injury Rates") +
+            geom_bar(stat = "identity") +
+            geom_text(
+              aes(
+                label=ceiling(INJURIES),
+                hjust=0.5,
+                vjust=1
+              ),
+              color="red"
+            ) +
+            xlab("Weather Phenomena") +
+            ylab("Total Injury")
+
+        eventCasualtiesPlot <- ggplot(
+              rankedEventCasualties[1:10,],
+              aes(
+                x=reorder(EVTYPE, -TOTAL),
+                y=TOTAL
+              )
+            ) +
+            ggtitle("Top 10 Weather Phenomena with Highest Casualty Rates") +
+            geom_bar(stat = "identity") +
+            geom_text(
+              aes(
+                label=ceiling(TOTAL),
+                hjust=0.5,
+                vjust=1
+              ),
+              color="red"
+            ) +
+            xlab("Weather Phenomena") +
+            ylab("Total Casualty")
+
+        grid.arrange(eventFatalitiesPlot, eventInjuriesPlot, eventCasualtiesPlot, ncol=1)
+    ```
+
+  6. Preparation of working data for time-series trend of the weather phenomena contributing to at least 75% of casualty rate.
+    ```{r echo=TRUE, cache=TRUE}
+        workData$BGN_DATE <- mdy_hms(workData$BGN_DATE)
+        workData$EVENTYEAR <- year(workData$BGN_DATE)
+
+        eventCasualtyFull <- apply(
+          X=workData,
+          MARGIN=1,
+          FUN=function(data) CasualtyCalculation(data["FATALITIES"],data["INJURIES"])
+        )
+
+        eventCasualtyFullNum <- as.numeric(as.character(eventCasualtyFull))
+
+        workData$CASUALTYTOTAL <- eventCasualtyFullNum
+
+        eventCasualtyByYear <- aggregate(data=workData, CASUALTYTOTAL~EVTYPE+EVENTYEAR, FUN=sum)
+    
+        eventCasualtyByYearOrdered <- eventCasualtyByYear[order(-eventCasualtyByYear$CASUALTYTOTAL),]
+    ```
+
+>Across the United States, which types of events have the greatest economic consequences?
+
+The above question asks for the impact that the various weather phenomena have on the economy of the United States,
+
+In light of the above question, this analysis will provide a view on which of the weather phenomena caused the most property and crop damaged viewed as cost.
+
+The raw data is processed to gather data on the property damange costs. The process data is then ranked by the cost with the weather phenomena causing the most expensive damage in the first position.
+
+  1. Pre-analysis preparation
+    ```{r echo=TRUE}
+    # This is a function used to calculate the actual cost of the damage
+    fullValueCalculation <- function(val, exp) {
+      if (exp == "H" || exp == "h") {
+        return (as.numeric(val)*100)
+      }
+      else if (exp == "K" || exp == "k") {
+        return (as.numeric(val)*1000)
+      }
+      else if (exp == "M" || exp == "m") {
+        return (as.numeric(val)*1000000)
+      }
+      else if (exp == "B" || exp == "b") {
+        return (as.numeric(val)*1000000000)
+      }
+      else if (val == 0 || exp == "") {
+        return (as.numeric(0))
+      }
+      else {
+        return (as.numeric(val))
+      }
+    }
+    
+    # This is a function to add both property and crop cost
+    damageCalculation <- function(property, crop) {
+      return (as.numeric(property) + as.numeric(crop))
+    }
+
+    ```
+    
+  2. Data for property damages is as shown:
+    ```{r echo=TRUE, cache=TRUE, warning=FALSE}
+    propDmgValues <- apply(
+      X=workData,
+      MARGIN=1,
+      FUN=function(data) fullValueCalculation(data["PROPDMG"],data["PROPDMGEXP"])
+    )
+      
+    propDmgValues <- as.numeric(as.character(propDmgValues))
+      
+    workData$PROPDMGVAL <- propDmgValues
+      
+    eventPropDmg <- aggregate(data=workData, PROPDMGVAL~EVTYPE, FUN=sum)
+    
+    rankedEventPropDmg <- eventPropDmg[order(-eventPropDmg$PROPDMGVAL),]
+    ```
+    ```{r echo=FALSE}
+    rownames(rankedEventPropDmg) <- NULL
+    ```
+      
+     The following are the top 10 weather phenomena that costed the highest in property damage.
+    ```{r echo=FALSE}
+    rankedEventPropDmg[1:10,]
+    ```
+
+  3. Data for crop damages is as shown:
+    ```{r echo=TRUE, cache=TRUE, warning=FALSE}
+    cropDmgValues <-apply(
+      X=workData,
+      MARGIN=1,
+      FUN=function(data) fullValueCalculation(data["CROPDMG"],data["CROPDMGEXP"])
+    )
+      
+    cropDmgValues <- as.numeric(as.character(cropDmgValues))
+      
+    workData$CROPDMGVAL <- cropDmgValues
+      
+    eventCropDmg <- aggregate(data=workData, CROPDMGVAL~EVTYPE, FUN=sum)
+    
+    rankedEventCropDmg <- eventCropDmg[order(-eventCropDmg$CROPDMGVAL),]
+    ```
+    ```{r echo=FALSE}
+    rownames(rankedEventCropDmg) <- NULL
+    ```
+    
+     The following are the top 10 weather phenomena that costed the highest in crop damage.
+    ```{r echo=FALSE}
+    rankedEventCropDmg[1:10,]
+    ```
+
+  4. The combined cost for property and crop damages are as follows:
+    ```{r echo=TRUE, cache=TRUE}
+    eventDmgCosts <- merge(eventPropDmg, eventCropDmg, by=c("EVTYPE"))
+    
+    valueDmgCosts <- apply(
+      X=eventDmgCosts,
+      MARGIN=1,
+      FUN=function(data) damageCalculation(data["PROPDMGVAL"],data["CROPDMGVAL"])
+    )
+
+    valueDmgCostsNum <- as.numeric(as.character(valueDmgCosts))
+
+    eventDmgCosts$TOTAL <- valueDmgCostsNum
+    
+    rankedEventDmgCosts <- eventDmgCosts[order(-eventDmgCosts$TOTAL),]
+    ```
+    ```{r echo=FALSE}
+    rownames(rankedEventDmgCosts) <- NULL
+    ```
+    
+     The following are the top 10 weather phenomena costing the highest in damages.
+    ```{r echo=FALSE}
+    rankedEventDmgCosts[1:10,]
+    ```
+    
+  5. The following graphs presents the above data.
+    ```{r echo=TRUE, fig.width=15, fig.height=10}
+      eventPropDmgPlot <- ggplot(
+              rankedEventPropDmg[1:10,],
+              aes(
+                x=reorder(EVTYPE, -PROPDMGVAL),
+                y=PROPDMGVAL
+              )
+            ) +
+            ggtitle("Property Damages") +
+            geom_bar(stat = "identity") +
+            geom_text(
+              aes(
+                label=ceiling(PROPDMGVAL),
+                hjust=0.5,
+                vjust=1.25
+              ),
+              color="red"
+            ) +
+            xlab("Weather Phenomena") +
+            ylab("Total Property Damage")
+
+      eventCropDmgPlot <- ggplot(
+              rankedEventCropDmg[1:10,],
+              aes(
+                x=reorder(EVTYPE, -CROPDMGVAL),
+                y=CROPDMGVAL
+              )
+            ) +
+            ggtitle("Crop Damages") +
+            geom_bar(stat = "identity") +
+            geom_text(
+              aes(
+                label=ceiling(CROPDMGVAL),
+                hjust=0.5,
+                vjust=1.25
+              ),
+              color="red"
+            ) +
+            xlab("Weather Phenomena") +
+            ylab("Total Crop Damage")
+
+      eventTotalDmgPlot <- ggplot(
+              rankedEventDmgCosts[1:10,],
+              aes(
+                x=reorder(EVTYPE, -TOTAL),
+                y=TOTAL
+              )
+            ) +
+            ggtitle("Top 10 Weather Phenomena with Highest Damage Costs") +
+            geom_bar(stat = "identity") +
+            geom_text(
+              aes(
+                label=ceiling(TOTAL),
+                hjust=0.5,
+                vjust=1.25
+              ),
+              color="red"
+            ) +
+            xlab("Weather Phenomena") +
+            ylab("Total Damage")
+
+      grid.arrange(eventPropDmgPlot, eventCropDmgPlot, eventTotalDmgPlot, ncol=1)
+    ```
+    
+    6. Preparation of working data for time-series trend of the weather phenomena contributing to at least 75% of damage costs.
+    ```{r echo=TRUE, cache=TRUE}
+        eventDamageCosts <- apply(
+          X=workData,
+          MARGIN=1,
+          FUN=function(data) damageCalculation(data["PROPDMGVAL"],data["CROPDMGVAL"])
+        )
+
+        eventDamageCostsNum <- as.numeric(as.character(eventDamageCosts))
+
+        workData$DAMAGETOTAL <- eventDamageCostsNum
+        
+        eventDamageByYear <- aggregate(data=workData, DAMAGETOTAL~EVTYPE+EVENTYEAR, FUN=sum)
+    
+        eventDamageByYearOrdered <- eventDamageByYear[order(-eventDamageByYear$DAMAGETOTAL),]
+    ```
+
+## Results
+The impact of most severe weather phenomena causing the greatest (top 10) in casualties and damages are summarised here.
+
+  1. Data summary
+    
+    1. Casualty Rate
+    ```{r echo=TRUE}
+      summary(rankedEventCasualties[1:10,2:4])
+    ```
+       
+    
+    2. Damage Costs
+    ```{r echo=TRUE}
+      summary(rankedEventDmgCosts[1:10,2:4])
+    ```
+    
+  2. Weather phenomena within the top 10 most servere, causing at least 75% of the calculated harm (casualties or damages)
+  
+    A. Impact to human lives: Fatalities
+    ```{r echo=TRUE}
+      rankedEventCasualties[rankedEventCasualties$FATALITIES >= quantile(rankedEventCasualties[1:10,2], c(0.75)),]
+    ```
+    
+    B. Impact to human lives: Injuries
+    ```{r echo=TRUE}
+      rankedEventCasualties[rankedEventCasualties$INJURIES >= quantile(rankedEventCasualties[1:10,3], c(0.75)),]
+    ```
+    
+    C. Impact to human lives: Total
+    ```{r echo=TRUE}
+      impactCasualtiesTotal <- rankedEventCasualties[rankedEventCasualties$TOTAL >= quantile(rankedEventCasualties[1:10,4], c(0.75)),]
+      noOfCasualties3rdQuantile <- nrow(impactCasualtiesTotal)
+    ```
+    ```{r echo=FALSE}
+      impactCasualtiesTotal
+    ```
+        
+    D. Impact to infrastructure: Properties
+    ```{r}
+      rankedEventDmgCosts[rankedEventDmgCosts$PROPDMGVAL >= quantile(rankedEventDmgCosts[1:10,2], c(0.75)),]
+    ```
+    
+    E. Impact to infrastructure: Crops
+    ```{r}
+      rankedEventDmgCosts[rankedEventDmgCosts$CROPDMGVAL >= quantile(rankedEventDmgCosts[1:10,3], c(0.75)),]
+    ```
+    
+    F. Impact to infrastructure: Total
+    ```{r}
+      impactDamagesTotal <- rankedEventDmgCosts[rankedEventDmgCosts$TOTAL >= quantile(rankedEventDmgCosts[1:10,4], c(0.75)),]
+      noOfDamages3rdQuantile <- nrow(impactDamagesTotal)
+    ```
+    ```{r echo=FALSE}
+      impactDamagesTotal
+    ```
+  
+  5. Visual Representation of weather phenomena causing at least 75% of the total calculated harm (casualties or damages) and the time-series trend for years in record.
+    ```{r echo=TRUE, warning=FALSE, fig.width=15, fig.height=10}
+        casualtyPlot <- ggplot(
+              rankedEventCasualties[1:3,],
+              aes(
+                x=reorder(EVTYPE, -TOTAL),
+                y=TOTAL,
+                factor(TOTAL)
+              )
+            ) +
+            ggtitle("Weather Phenomena causing at least 75% of Total Casualties") +
+            geom_bar(stat = "identity") +
+            geom_text(
+              aes(
+                label=ceiling(TOTAL),
+                hjust=0.5,
+                vjust=-0.5
+              )
+            ) +
+            xlab("Weather Phenomena") +
+            ylab("Total Casualty")
+    
+        damagePlot <- ggplot(
+              rankedEventDmgCosts[1:3,],
+              aes( 
+                x=reorder(EVTYPE, -TOTAL),
+                y=TOTAL
+              )
+            ) +
+            ggtitle("Weather Phenomena causing at least 75% of Total Damages") +
+            geom_bar(stat = "identity") +
+            geom_text(
+              aes(
+                label=ceiling(TOTAL),
+                hjust=0.5,
+                vjust=-0.5
+              )
+            ) +
+            xlab("Weather Phenomena") +
+            ylab("Total Cost")
+            
+        casualtyTrend <- ggplot(
+              data=eventCasualtyByYearOrdered[eventCasualtyByYearOrdered$EVTYPE %in% impactCasualtiesTotal$EVTYPE,],
+              aes(
+                x=EVENTYEAR,
+                y=CASUALTYTOTAL,
+                group=EVTYPE,
+                color=EVTYPE
+              )
+            ) +
+            ggtitle("Trend of Weather Phenomena causing 75% of Casualties") +
+            geom_line() +
+            geom_point() +
+            geom_smooth(method="loess") +
+            xlab("Years") +
+            ylab("Casualty Rate")
+
+        damageTrend <- ggplot(
+              data=eventDamageByYearOrdered[eventDamageByYearOrdered$EVTYPE %in% impactDamagesTotal$EVTYPE,],
+              aes(
+                x=EVENTYEAR,
+                y=DAMAGETOTAL,
+                group=EVTYPE,
+                color=EVTYPE
+              )
+            ) +
+            ggtitle("Trend of Weather Phenomena causing 75% of Damages") +
+            geom_line() +
+            geom_point() +
+            geom_smooth(method="loess") +
+            xlab("Years") +
+            ylab("Damage Costs")
+
+        grid.arrange(casualtyPlot, damagePlot, casualtyTrend, damageTrend, ncol=2)
+    ```
+
+## Reproducing this Analysis
+
+The setup used to perform this analysis is as follows:
+```{r echo=TRUE}
+    sessionInfo()
+```
