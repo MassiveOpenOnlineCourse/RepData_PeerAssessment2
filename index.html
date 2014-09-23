@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Architects+Daughter' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <title>Reproducible Data by EvoDest</title>
+  </head>
+
+  <body>
+    <header>
+      <div class="inner">
+        <h1>Reproducible Data</h1>
+        <h2></h2>
+        <a href="https://github.com/EvoDest/RepData_PeerAssessment2" class="button"><small>View project on</small>GitHub</a>
+      </div>
+    </header>
+
+    <div id="content-wrapper">
+      <div class="inner clearfix">
+        <section id="main-content">
+          <h1>
+<a name="impact-of-weather-events-against-population-health-and-the-economy-of-the-united-states" class="anchor" href="#impact-of-weather-events-against-population-health-and-the-economy-of-the-united-states"><span class="octicon octicon-link"></span></a>Impact of Weather Events against Population Health and the Economy of the United States</h1>
+
+<hr><h2>
+<a name="synopsis" class="anchor" href="#synopsis"><span class="octicon octicon-link"></span></a>Synopsis</h2>
+
+<p>The following anaylsis looks into the effects of natural weather phenomena in the United States. Data from the National Oceanic and Atmospheric Administration (NOAA) is used to determine the various consequences of weather events such as majors storms that were experienced across the US. Data measured from the occurrance of such events were then used to measure the impact they had on the health of the United States population as well as their effects on the economy across the country.</p>
+
+<h2>
+<a name="data-processing" class="anchor" href="#data-processing"><span class="octicon octicon-link"></span></a>Data Processing</h2>
+
+<p>The following steps depict the process in which the raw Storm data is read and prepared for analysis.</p>
+
+<ol>
+<li>The Storm data is uncompressed and then read as shown.
+"StormData.csv.bz2" is the original compressed file with the NOAA data.</li>
+</ol><div class="highlight highlight-r"><pre>    originalData <span class="o">&lt;-</span> read.csv<span class="p">(</span><span class="kp">bzfile</span><span class="p">(</span><span class="s">"StormData.csv.bz2"</span><span class="p">))</span>
+</pre></div>
+
+<ol>
+<li>The following is a tabluar representation of the raw data</li>
+</ol><pre><code>##   STATE__           BGN_DATE BGN_TIME TIME_ZONE COUNTY COUNTYNAME STATE
+## 1       1  4/18/1950 0:00:00     0130       CST     97     MOBILE    AL
+## 2       1  4/18/1950 0:00:00     0145       CST      3    BALDWIN    AL
+## 3       1  2/20/1951 0:00:00     1600       CST     57    FAYETTE    AL
+## 4       1   6/8/1951 0:00:00     0900       CST     89    MADISON    AL
+## 5       1 11/15/1951 0:00:00     1500       CST     43    CULLMAN    AL
+## 6       1 11/15/1951 0:00:00     2000       CST     77 LAUDERDALE    AL
+##    EVTYPE BGN_RANGE BGN_AZI BGN_LOCATI END_DATE END_TIME COUNTY_END
+## 1 TORNADO         0                                               0
+## 2 TORNADO         0                                               0
+## 3 TORNADO         0                                               0
+## 4 TORNADO         0                                               0
+## 5 TORNADO         0                                               0
+## 6 TORNADO         0                                               0
+##   COUNTYENDN END_RANGE END_AZI END_LOCATI LENGTH WIDTH F MAG FATALITIES
+## 1         NA         0                      14.0   100 3   0          0
+## 2         NA         0                       2.0   150 2   0          0
+## 3         NA         0                       0.1   123 2   0          0
+## 4         NA         0                       0.0   100 2   0          0
+## 5         NA         0                       0.0   150 2   0          0
+## 6         NA         0                       1.5   177 2   0          0
+##   INJURIES PROPDMG PROPDMGEXP CROPDMG CROPDMGEXP WFO STATEOFFIC ZONENAMES
+## 1       15    25.0          K       0                                    
+## 2        0     2.5          K       0                                    
+## 3        2    25.0          K       0                                    
+## 4        2     2.5          K       0                                    
+## 5        2     2.5          K       0                                    
+## 6        6     2.5          K       0                                    
+##   LATITUDE LONGITUDE LATITUDE_E LONGITUDE_ REMARKS REFNUM
+## 1     3040      8812       3051       8806              1
+## 2     3042      8755          0          0              2
+## 3     3340      8742          0          0              3
+## 4     3458      8626          0          0              4
+## 5     3412      8642          0          0              5
+## 6     3450      8748          0          0              6
+</code></pre>
+
+<ol>
+<li>The follow shows all the types of weather phenomena in the data.</li>
+</ol><div class="highlight highlight-r"><pre>    originalData<span class="o">$</span>INDEX <span class="o">&lt;-</span> <span class="m">1</span>
+    eventTypes <span class="o">&lt;-</span> aggregate<span class="p">(</span>data<span class="o">=</span>originalData<span class="p">,</span> INDEX<span class="o">~</span>EVTYPE<span class="p">,</span> FUN<span class="o">=</span><span class="kp">sum</span><span class="p">)</span>
+    eventTypes <span class="o">&lt;-</span> eventTypes<span class="p">[</span><span class="kp">order</span><span class="p">(</span>eventTypes<span class="o">$</span>EVTYPE<span class="p">),]</span>
+</pre></div>
+
+<pre><code>##  [1]    HIGH SURF ADVISORY   COASTAL FLOOD          FLASH FLOOD          
+##  [4]  LIGHTNING              TSTM WIND              TSTM WIND (G45)      
+##  [7]  WATERSPOUT             WIND                  ?                     
+## [10] ABNORMAL WARMTH        ABNORMALLY DRY         ABNORMALLY WET        
+## [13] ACCUMULATED SNOWFALL   AGRICULTURAL FREEZE    APACHE COUNTY         
+## [16] ASTRONOMICAL HIGH TIDE ASTRONOMICAL LOW TIDE  AVALANCE              
+## [19] AVALANCHE              BEACH EROSIN          
+## 985 Levels:    HIGH SURF ADVISORY  COASTAL FLOOD ... WND
+</code></pre>
+
+<p>It can been seen that the listed types of phenomena contain many duplicates of varying issues, for example, spelling errors, mixture of random uppercase and lowercase alphabets and events of the same type but sub-categorized.</p>
+
+<p>The following procedures are then performed in an attempt to solve or reduce the above issues.</p>
+
+<div class="highlight highlight-r"><pre>workData <span class="o">&lt;-</span> originalData
+
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">lapply</span><span class="p">(</span>workData<span class="o">$</span>EVTYPE<span class="p">,</span> <span class="kr">function</span><span class="p">(</span>v<span class="p">)</span> <span class="p">{</span>
+  <span class="kr">return</span><span class="p">(</span><span class="kp">toupper</span><span class="p">(</span>v<span class="p">))</span>
+<span class="p">})</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">as.factor</span><span class="p">(</span><span class="kp">unlist</span><span class="p">(</span>workData<span class="o">$</span>EVTYPE<span class="p">))</span>
+
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^\\s+|\\s+$"</span><span class="p">,</span> <span class="s">""</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^AVALANCE"</span><span class="p">,</span> <span class="s">"AVALANCHE"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^BITTER WIND CHILL TEMPERATURES"</span><span class="p">,</span> <span class="s">"BITTER WIND CHILL"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^BEACH EROSIN"</span><span class="p">,</span> <span class="s">"BEACH EROSION"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(BEACH EROSION).*"</span><span class="p">,</span> <span class="s">"BEACH EROSION"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(BITTER WIND CHILL).*"</span><span class="p">,</span> <span class="s">"BITTER WIND CHILL"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(BLIZZARD).*"</span><span class="p">,</span> <span class="s">"BLIZZARD"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(BLOWING SNOW).*"</span><span class="p">,</span> <span class="s">"BLIZZARD"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(COASTAL FLOOD).*"</span><span class="p">,</span> <span class="s">"COASTAL FLOOD"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(COLD).*"</span><span class="p">,</span> <span class="s">"COLD/WIND CHILL"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(DRY).*"</span><span class="p">,</span> <span class="s">"DRY"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(EXTREME WIND).*"</span><span class="p">,</span> <span class="s">"EXTREME WIND"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(EXTREME COLD).*"</span><span class="p">,</span> <span class="s">"EXTREME COLD/WIND CHILL"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(DRY).*"</span><span class="p">,</span> <span class="s">"DRY MICROBURST"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(MICROBURST).*"</span><span class="p">,</span> <span class="s">"DRY MICROBURST"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(DUST DEVIL).*"</span><span class="p">,</span> <span class="s">"DUST DEVIL"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(DUST STORM).*"</span><span class="p">,</span> <span class="s">"DUST STORM"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(EXCESSIVE HEAT).*"</span><span class="p">,</span> <span class="s">"EXCESSIVE HEAT"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(EXCESSIVE SNOW).*"</span><span class="p">,</span> <span class="s">"BLIZZARD"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(EXTREME HEAT).*"</span><span class="p">,</span> <span class="s">"EXCESSIVE HEAT"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(FLASH FLOO).*"</span><span class="p">,</span> <span class="s">"FLASH FLOOD"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(FLOOD).*"</span><span class="p">,</span> <span class="s">"FLOOD"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(FOG).*"</span><span class="p">,</span> <span class="s">"1FREEzING FOG"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(FREEzING FOG).*"</span><span class="p">,</span> <span class="s">"1FREEzING FOG"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(FROST).*"</span><span class="p">,</span> <span class="s">"FROST/FREEZING"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(FREEZ).*"</span><span class="p">,</span> <span class="s">"FROST/FREEZING"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(1FREEzING FOG).*"</span><span class="p">,</span> <span class="s">"FREEzING FOG"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(FUNNEL).*"</span><span class="p">,</span> <span class="s">"FUNNEL CLOUD"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(GLAZE).*"</span><span class="p">,</span> <span class="s">"GLAZE"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(GUSTY).*"</span><span class="p">,</span> <span class="s">"GUSTY WIND"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(HAIL).*"</span><span class="p">,</span> <span class="s">"HAIL"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(HEAT).*"</span><span class="p">,</span> <span class="s">"HEAT"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(HEAVY RAIN).*"</span><span class="p">,</span> <span class="s">"HEAVY RAIN"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(HEAVY PRECIPITATION).*"</span><span class="p">,</span> <span class="s">"HEAVY RAIN"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(HEAVY SNOW).*"</span><span class="p">,</span> <span class="s">"HEAVY SNOW"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(HEAVY SURF).*"</span><span class="p">,</span> <span class="s">"HIGH SURF"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(HIGH SURF).*"</span><span class="p">,</span> <span class="s">"HIGH SURF"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(HIGH WIND).*"</span><span class="p">,</span> <span class="s">"HIGH WIND"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(HURRICANE).*"</span><span class="p">,</span> <span class="s">"HURRICANE"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(ICE|ICY).*"</span><span class="p">,</span> <span class="s">"ICE STORM"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(LAKE EFFECT).*"</span><span class="p">,</span> <span class="s">"LAKE-EFFECT SNOW"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(LIGHT SNOW).*"</span><span class="p">,</span> <span class="s">"LIGHT SNOW"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(LIGHTNING).*"</span><span class="p">,</span> <span class="s">"LIGHTNING"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(LIGHTING).*"</span><span class="p">,</span> <span class="s">"LIGHTNING"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(MICROBURST).*"</span><span class="p">,</span> <span class="s">"DRY MICROBURST"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"(TSTM)"</span><span class="p">,</span> <span class="s">"THUNDERSTORM"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(MUD).*"</span><span class="p">,</span> <span class="s">"MUD SLIDE"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(RIP CURRENT).*"</span><span class="p">,</span> <span class="s">"RIP CURRENT"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(SNOW).*"</span><span class="p">,</span> <span class="s">"SNOW"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(STRONG WIND).*"</span><span class="p">,</span> <span class="s">"STRONG WIND"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(STORM SURGE).*"</span><span class="p">,</span> <span class="s">"STORM SURGE"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(THUNDERSTORM).*"</span><span class="p">,</span> <span class="s">"THUNDERSTORM WIND"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(TORNADO).*"</span><span class="p">,</span> <span class="s">"TORNADO"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(TSTM).*"</span><span class="p">,</span> <span class="s">"THUNDERSTORM WIND"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(WATERSPOUT).*"</span><span class="p">,</span> <span class="s">"WATERSPOUT"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(WILD).*"</span><span class="p">,</span> <span class="s">"WILDFIRE"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(WIND).*"</span><span class="p">,</span> <span class="s">"WIND"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(WINTER STORM).*"</span><span class="p">,</span> <span class="s">"WINTER STORM"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+workData<span class="o">$</span>EVTYPE <span class="o">&lt;-</span> <span class="kp">gsub</span><span class="p">(</span><span class="s">"^(WINTER WEATHER).*"</span><span class="p">,</span> <span class="s">"WINTER WEATHER"</span><span class="p">,</span> workData<span class="o">$</span>EVTYPE<span class="p">)</span>
+</pre></div>
+
+<p>After filtering and modified the event type names as necessary, the event type list have been changed to the following which will then be used for the analysis.</p>
+
+<div class="highlight highlight-r"><pre>    eventTypes <span class="o">&lt;-</span> aggregate<span class="p">(</span>data<span class="o">=</span>workData<span class="p">,</span> INDEX<span class="o">~</span>EVTYPE<span class="p">,</span> FUN<span class="o">=</span><span class="kp">sum</span><span class="p">)</span>
+    eventTypes <span class="o">&lt;-</span> eventTypes<span class="p">[</span><span class="kp">order</span><span class="p">(</span>eventTypes<span class="o">$</span>EVTYPE<span class="p">),]</span>
+</pre></div>
+
+<pre><code>##  [1] "?"                          "ABNORMAL WARMTH"           
+##  [3] "ABNORMALLY DRY"             "ABNORMALLY WET"            
+##  [5] "ACCUMULATED SNOWFALL"       "AGRICULTURAL FREEZE"       
+##  [7] "APACHE COUNTY"              "ASTRONOMICAL HIGH TIDE"    
+##  [9] "ASTRONOMICAL LOW TIDE"      "AVALANCHE"                 
+## [11] "BEACH EROSION"              "BEACH FLOOD"               
+## [13] "BELOW NORMAL PRECIPITATION" "BITTER WIND CHILL"         
+## [15] "BLACK ICE"                  "BLIZZARD"                  
+## [17] "BLOW-OUT TIDE"              "BLOW-OUT TIDES"            
+## [19] "BLOWING DUST"               "BREAKUP FLOODING"
+</code></pre>
+
+<blockquote>
+<p>Across the United States, which types of events (as indicated in the EVTYPE variable) are most harmful with respect to population health?</p>
+</blockquote>
+
+<p>The above question asks for the impact that the various weather phenomena have on the health of the United States population.</p>
+
+<p>In light of the above question, this analysis will provide a view on which of the weather phenomena caused the most harm to people.</p>
+
+<p>The raw data is processed to gather data on the Casualty rate of the various weather phenomena. The process data is then ranked in the order of fatalities then injuries.</p>
+
+<ol>
+<li>
+<p>Pre-analysis preparation</p>
+
+<div class="highlight highlight-r"><pre><span class="c1"># This is a function to add both fatality and injury numbers</span>
+CasualtyCalculation <span class="o">&lt;-</span> <span class="kr">function</span><span class="p">(</span>fatality<span class="p">,</span> injury<span class="p">)</span> <span class="p">{</span>
+  <span class="kr">return</span> <span class="p">(</span><span class="kp">as.numeric</span><span class="p">(</span>fatality<span class="p">)</span> <span class="o">+</span> <span class="kp">as.numeric</span><span class="p">(</span>injury<span class="p">))</span>
+<span class="p">}</span>
+</pre></div>
+</li>
+<li>
+<p>Fatality data is processed as shown:</p>
+
+<div class="highlight highlight-r"><pre>eventFatalities <span class="o">&lt;-</span> aggregate<span class="p">(</span>data<span class="o">=</span>workData<span class="p">,</span> FATALITIES<span class="o">~</span>EVTYPE<span class="p">,</span> FUN<span class="o">=</span><span class="kp">sum</span><span class="p">)</span>
+
+rankedEventFatalities <span class="o">&lt;-</span> eventFatalities<span class="p">[</span><span class="kp">order</span><span class="p">(</span><span class="o">-</span>eventFatalities<span class="o">$</span>FATALITIES<span class="p">),]</span>
+</pre></div>
+
+<p>The top 10 phenomena causing the highest fatality rates are as follows:</p>
+
+<pre><code>##                     EVTYPE FATALITIES
+## 1                  TORNADO       5658
+## 2           EXCESSIVE HEAT       1999
+## 3                     HEAT       1118
+## 4              FLASH FLOOD       1018
+## 5                LIGHTNING        817
+## 6        THUNDERSTORM WIND        710
+## 7              RIP CURRENT        577
+## 8                    FLOOD        495
+## 9                HIGH WIND        293
+## 10 EXTREME COLD/WIND CHILL        287
+</code></pre>
+</li>
+<li>
+<p>Injury data is processed as shown:</p>
+
+<div class="highlight highlight-r"><pre>eventInjuries <span class="o">&lt;-</span> aggregate<span class="p">(</span>data<span class="o">=</span>workData<span class="p">,</span> INJURIES<span class="o">~</span>EVTYPE<span class="p">,</span> FUN<span class="o">=</span><span class="kp">sum</span><span class="p">)</span>
+
+rankedEventInjuries <span class="o">&lt;-</span> eventInjuries<span class="p">[</span><span class="kp">order</span><span class="p">(</span><span class="o">-</span>eventInjuries<span class="o">$</span>INJURIES<span class="p">),]</span>
+</pre></div>
+
+<p>The top 10 phenomena causing the highest injury rates are as follows:</p>
+
+<pre><code>##               EVTYPE INJURIES
+## 1            TORNADO    91364
+## 2  THUNDERSTORM WIND     9508
+## 3              FLOOD     6806
+## 4     EXCESSIVE HEAT     6680
+## 5          LIGHTNING     5232
+## 6               HEAT     2494
+## 7          ICE STORM     2146
+## 8        FLASH FLOOD     1785
+## 9           WILDFIRE     1606
+## 10         HIGH WIND     1471
+</code></pre>
+</li>
+<li>
+<p>The fatality and injury numbers are then combined as shown:</p>
+
+<div class="highlight highlight-r"><pre>eventCasualties <span class="o">&lt;-</span> <span class="kp">merge</span><span class="p">(</span>eventFatalities<span class="p">,</span> eventInjuries<span class="p">,</span> by<span class="o">=</span><span class="kt">c</span><span class="p">(</span><span class="s">"EVTYPE"</span><span class="p">))</span>
+
+valueCasualtyFull <span class="o">&lt;-</span> <span class="kp">apply</span><span class="p">(</span>
+  X<span class="o">=</span>eventCasualties<span class="p">,</span>
+  MARGIN<span class="o">=</span><span class="m">1</span><span class="p">,</span>
+  FUN<span class="o">=</span><span class="kr">function</span><span class="p">(</span>data<span class="p">)</span> CasualtyCalculation<span class="p">(</span>data<span class="p">[</span><span class="s">"FATALITIES"</span><span class="p">],</span>data<span class="p">[</span><span class="s">"INJURIES"</span><span class="p">])</span>
+<span class="p">)</span>
+
+valueCasualtyFullNum <span class="o">&lt;-</span> <span class="kp">as.numeric</span><span class="p">(</span><span class="kp">as.character</span><span class="p">(</span>valueCasualtyFull<span class="p">))</span>
+
+eventCasualties<span class="o">$</span>TOTAL <span class="o">&lt;-</span> valueCasualtyFullNum
+
+rankedEventCasualties <span class="o">&lt;-</span> eventCasualties<span class="p">[</span><span class="kp">order</span><span class="p">(</span><span class="o">-</span>eventCasualties<span class="o">$</span>TOTAL<span class="p">),]</span>
+</pre></div>
+
+<p>The following are the top 10 weather phenomena causing the highest total Casualty rates.</p>
+
+<pre><code>##               EVTYPE FATALITIES INJURIES TOTAL
+## 1            TORNADO       5658    91364 97022
+## 2  THUNDERSTORM WIND        710     9508 10218
+## 3     EXCESSIVE HEAT       1999     6680  8679
+## 4              FLOOD        495     6806  7301
+## 5          LIGHTNING        817     5232  6049
+## 6               HEAT       1118     2494  3612
+## 7        FLASH FLOOD       1018     1785  2803
+## 8          ICE STORM        101     2146  2247
+## 9          HIGH WIND        293     1471  1764
+## 10          WILDFIRE         90     1606  1696
+</code></pre>
+</li>
+<li>
+<p>A visual representation of the data as shown previously:</p>
+
+<div class="highlight highlight-r"><pre>    eventFatalitiesPlot <span class="o">&lt;-</span> ggplot<span class="p">(</span>
+          rankedEventFatalities<span class="p">[</span><span class="m">1</span><span class="o">:</span><span class="m">10</span><span class="p">,],</span>
+          aes<span class="p">(</span>
+            x<span class="o">=</span>reorder<span class="p">(</span>EVTYPE<span class="p">,</span> <span class="o">-</span>FATALITIES<span class="p">),</span>
+            y<span class="o">=</span>FATALITIES
+          <span class="p">)</span>
+        <span class="p">)</span> <span class="o">+</span>
+        ggtitle<span class="p">(</span><span class="s">"Fatality Rates"</span><span class="p">)</span> <span class="o">+</span>
+        geom_bar<span class="p">(</span>stat <span class="o">=</span> <span class="s">"identity"</span><span class="p">)</span> <span class="o">+</span>
+        geom_text<span class="p">(</span>
+          aes<span class="p">(</span>
+            label<span class="o">=</span><span class="kp">ceiling</span><span class="p">(</span>FATALITIES<span class="p">),</span>
+            hjust<span class="o">=</span><span class="m">0.5</span><span class="p">,</span>
+            vjust<span class="o">=</span><span class="m">1</span>
+          <span class="p">),</span>
+          color<span class="o">=</span><span class="s">"red"</span>
+        <span class="p">)</span> <span class="o">+</span>
+        xlab<span class="p">(</span><span class="s">"Weather Phenomena"</span><span class="p">)</span> <span class="o">+</span>
+        ylab<span class="p">(</span><span class="s">"Total Fatality"</span><span class="p">)</span>
+
+    eventInjuriesPlot <span class="o">&lt;-</span> ggplot<span class="p">(</span>
+          rankedEventInjuries<span class="p">[</span><span class="m">1</span><span class="o">:</span><span class="m">10</span><span class="p">,],</span>
+          aes<span class="p">(</span>
+            x<span class="o">=</span>reorder<span class="p">(</span>EVTYPE<span class="p">,</span> <span class="o">-</span>INJURIES<span class="p">),</span>
+            y<span class="o">=</span>INJURIES
+          <span class="p">)</span>
+        <span class="p">)</span> <span class="o">+</span>
+        ggtitle<span class="p">(</span><span class="s">"Injury Rates"</span><span class="p">)</span> <span class="o">+</span>
+        geom_bar<span class="p">(</span>stat <span class="o">=</span> <span class="s">"identity"</span><span class="p">)</span> <span class="o">+</span>
+        geom_text<span class="p">(</span>
+          aes<span class="p">(</span>
+            label<span class="o">=</span><span class="kp">ceiling</span><span class="p">(</span>INJURIES<span class="p">),</span>
+            hjust<span class="o">=</span><span class="m">0.5</span><span class="p">,</span>
+            vjust<span class="o">=</span><span class="m">1</span>
+          <span class="p">),</span>
+          color<span class="o">=</span><span class="s">"red"</span>
+        <span class="p">)</span> <span class="o">+</span>
+        xlab<span class="p">(</span><span class="s">"Weather Phenomena"</span><span class="p">)</span> <span class="o">+</span>
+        ylab<span class="p">(</span><span class="s">"Total Injury"</span><span class="p">)</span>
+
+    eventCasualtiesPlot <span class="o">&lt;-</span> ggplot<span class="p">(</span>
+          rankedEventCasualties<span class="p">[</span><span class="m">1</span><span class="o">:</span><span class="m">10</span><span class="p">,],</span>
+          aes<span class="p">(</span>
+            x<span class="o">=</span>reorder<span class="p">(</span>EVTYPE<span class="p">,</span> <span class="o">-</span>TOTAL<span class="p">),</span>
+            y<span class="o">=</span>TOTAL
+          <span class="p">)</span>
+        <span class="p">)</span> <span class="o">+</span>
+        ggtitle<span class="p">(</span><span class="s">"Top 10 Weather Phenomena with Highest Casualty Rates"</span><span class="p">)</span> <span class="o">+</span>
+        geom_bar<span class="p">(</span>stat <span class="o">=</span> <span class="s">"identity"</span><span class="p">)</span> <span class="o">+</span>
+        geom_text<span class="p">(</span>
+          aes<span class="p">(</span>
+            label<span class="o">=</span><span class="kp">ceiling</span><span class="p">(</span>TOTAL<span class="p">),</span>
+            hjust<span class="o">=</span><span class="m">0.5</span><span class="p">,</span>
+            vjust<span class="o">=</span><span class="m">1</span>
+          <span class="p">),</span>
+          color<span class="o">=</span><span class="s">"red"</span>
+        <span class="p">)</span> <span class="o">+</span>
+        xlab<span class="p">(</span><span class="s">"Weather Phenomena"</span><span class="p">)</span> <span class="o">+</span>
+        ylab<span class="p">(</span><span class="s">"Total Casualty"</span><span class="p">)</span>
+
+    grid.arrange<span class="p">(</span>eventFatalitiesPlot<span class="p">,</span> eventInjuriesPlot<span class="p">,</span> eventCasualtiesPlot<span class="p">,</span> ncol<span class="o">=</span><span class="m">1</span><span class="p">)</span>
+</pre></div>
+
+<p><img src="https://raw.githubusercontent.com/EvoDest/RepData_PeerAssessment2/master/figure/unnamed-chunk-19.png" alt=""></p>
+</li>
+<li>
+<p>Preparation of working data for time-series trend of the weather phenomena contributing to at least 75% of casualty rate.</p>
+
+<div class="highlight highlight-r"><pre>    workData<span class="o">$</span>BGN_DATE <span class="o">&lt;-</span> mdy_hms<span class="p">(</span>workData<span class="o">$</span>BGN_DATE<span class="p">)</span>
+    workData<span class="o">$</span>EVENTYEAR <span class="o">&lt;-</span> year<span class="p">(</span>workData<span class="o">$</span>BGN_DATE<span class="p">)</span>
+
+    eventCasualtyFull <span class="o">&lt;-</span> <span class="kp">apply</span><span class="p">(</span>
+      X<span class="o">=</span>workData<span class="p">,</span>
+      MARGIN<span class="o">=</span><span class="m">1</span><span class="p">,</span>
+      FUN<span class="o">=</span><span class="kr">function</span><span class="p">(</span>data<span class="p">)</span> CasualtyCalculation<span class="p">(</span>data<span class="p">[</span><span class="s">"FATALITIES"</span><span class="p">],</span>data<span class="p">[</span><span class="s">"INJURIES"</span><span class="p">])</span>
+    <span class="p">)</span>
+
+    eventCasualtyFullNum <span class="o">&lt;-</span> <span class="kp">as.numeric</span><span class="p">(</span><span class="kp">as.character</span><span class="p">(</span>eventCasualtyFull<span class="p">))</span>
+
+    workData<span class="o">$</span>CASUALTYTOTAL <span class="o">&lt;-</span> eventCasualtyFullNum
+
+    eventCasualtyByYear <span class="o">&lt;-</span> aggregate<span class="p">(</span>data<span class="o">=</span>workData<span class="p">,</span> CASUALTYTOTAL<span class="o">~</span>EVTYPE<span class="o">+</span>EVENTYEAR<span class="p">,</span> FUN<span class="o">=</span><span class="kp">sum</span><span class="p">)</span>
+
+    eventCasualtyByYearOrdered <span class="o">&lt;-</span> eventCasualtyByYear<span class="p">[</span><span class="kp">order</span><span class="p">(</span><span class="o">-</span>eventCasualtyByYear<span class="o">$</span>CASUALTYTOTAL<span class="p">),]</span>
+</pre></div>
+</li>
+</ol><blockquote>
+<p>Across the United States, which types of events have the greatest economic consequences?</p>
+</blockquote>
+
+<p>The above question asks for the impact that the various weather phenomena have on the economy of the United States,</p>
+
+<p>In light of the above question, this analysis will provide a view on which of the weather phenomena caused the most property and crop damaged viewed as cost.</p>
+
+<p>The raw data is processed to gather data on the property damange costs. The process data is then ranked by the cost with the weather phenomena causing the most expensive damage in the first position.</p>
+
+<ol>
+<li>
+<p>Pre-analysis preparation</p>
+
+<div class="highlight highlight-r"><pre><span class="c1"># This is a function used to calculate the actual cost of the damage</span>
+fullValueCalculation <span class="o">&lt;-</span> <span class="kr">function</span><span class="p">(</span>val<span class="p">,</span> <span class="kp">exp</span><span class="p">)</span> <span class="p">{</span>
+  <span class="kr">if</span> <span class="p">(</span>exp <span class="o">==</span> <span class="s">"H"</span> <span class="o">||</span> exp <span class="o">==</span> <span class="s">"h"</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kr">return</span> <span class="p">(</span><span class="kp">as.numeric</span><span class="p">(</span>val<span class="p">)</span><span class="o">*</span><span class="m">100</span><span class="p">)</span>
+  <span class="p">}</span>
+  <span class="kr">else</span> <span class="kr">if</span> <span class="p">(</span>exp <span class="o">==</span> <span class="s">"K"</span> <span class="o">||</span> exp <span class="o">==</span> <span class="s">"k"</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kr">return</span> <span class="p">(</span><span class="kp">as.numeric</span><span class="p">(</span>val<span class="p">)</span><span class="o">*</span><span class="m">1000</span><span class="p">)</span>
+  <span class="p">}</span>
+  <span class="kr">else</span> <span class="kr">if</span> <span class="p">(</span>exp <span class="o">==</span> <span class="s">"M"</span> <span class="o">||</span> exp <span class="o">==</span> <span class="s">"m"</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kr">return</span> <span class="p">(</span><span class="kp">as.numeric</span><span class="p">(</span>val<span class="p">)</span><span class="o">*</span><span class="m">1000000</span><span class="p">)</span>
+  <span class="p">}</span>
+  <span class="kr">else</span> <span class="kr">if</span> <span class="p">(</span>exp <span class="o">==</span> <span class="s">"B"</span> <span class="o">||</span> exp <span class="o">==</span> <span class="s">"b"</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kr">return</span> <span class="p">(</span><span class="kp">as.numeric</span><span class="p">(</span>val<span class="p">)</span><span class="o">*</span><span class="m">1000000000</span><span class="p">)</span>
+  <span class="p">}</span>
+  <span class="kr">else</span> <span class="kr">if</span> <span class="p">(</span>val <span class="o">==</span> <span class="m">0</span> <span class="o">||</span> exp <span class="o">==</span> <span class="s">""</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kr">return</span> <span class="p">(</span><span class="kp">as.numeric</span><span class="p">(</span><span class="m">0</span><span class="p">))</span>
+  <span class="p">}</span>
+  <span class="kr">else</span> <span class="p">{</span>
+    <span class="kr">return</span> <span class="p">(</span><span class="kp">as.numeric</span><span class="p">(</span>val<span class="p">))</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c1"># This is a function to add both property and crop cost</span>
+damageCalculation <span class="o">&lt;-</span> <span class="kr">function</span><span class="p">(</span>property<span class="p">,</span> crop<span class="p">)</span> <span class="p">{</span>
+  <span class="kr">return</span> <span class="p">(</span><span class="kp">as.numeric</span><span class="p">(</span>property<span class="p">)</span> <span class="o">+</span> <span class="kp">as.numeric</span><span class="p">(</span>crop<span class="p">))</span>
+<span class="p">}</span>
+</pre></div>
+</li>
+<li>
+<p>Data for property damages is as shown:</p>
+
+<div class="highlight highlight-r"><pre>propDmgValues <span class="o">&lt;-</span> <span class="kp">apply</span><span class="p">(</span>
+  X<span class="o">=</span>workData<span class="p">,</span>
+  MARGIN<span class="o">=</span><span class="m">1</span><span class="p">,</span>
+  FUN<span class="o">=</span><span class="kr">function</span><span class="p">(</span>data<span class="p">)</span> fullValueCalculation<span class="p">(</span>data<span class="p">[</span><span class="s">"PROPDMG"</span><span class="p">],</span>data<span class="p">[</span><span class="s">"PROPDMGEXP"</span><span class="p">])</span>
+<span class="p">)</span>
+
+propDmgValues <span class="o">&lt;-</span> <span class="kp">as.numeric</span><span class="p">(</span><span class="kp">as.character</span><span class="p">(</span>propDmgValues<span class="p">))</span>
+
+workData<span class="o">$</span>PROPDMGVAL <span class="o">&lt;-</span> propDmgValues
+
+eventPropDmg <span class="o">&lt;-</span> aggregate<span class="p">(</span>data<span class="o">=</span>workData<span class="p">,</span> PROPDMGVAL<span class="o">~</span>EVTYPE<span class="p">,</span> FUN<span class="o">=</span><span class="kp">sum</span><span class="p">)</span>
+
+rankedEventPropDmg <span class="o">&lt;-</span> eventPropDmg<span class="p">[</span><span class="kp">order</span><span class="p">(</span><span class="o">-</span>eventPropDmg<span class="o">$</span>PROPDMGVAL<span class="p">),]</span>
+</pre></div>
+
+<p>The following are the top 10 weather phenomena that costed the highest in property damage.</p>
+
+<pre><code>##               EVTYPE PROPDMGVAL
+## 1              FLOOD  1.450e+11
+## 2          HURRICANE  8.476e+10
+## 3            TORNADO  5.854e+10
+## 4        STORM SURGE  4.796e+10
+## 5        FLASH FLOOD  1.673e+10
+## 6               HAIL  1.597e+10
+## 7  THUNDERSTORM WIND  9.762e+09
+## 8           WILDFIRE  8.492e+09
+## 9     TROPICAL STORM  7.704e+09
+## 10      WINTER STORM  6.749e+09
+</code></pre>
+</li>
+<li>
+<p>Data for crop damages is as shown:</p>
+
+<div class="highlight highlight-r"><pre>cropDmgValues <span class="o">&lt;-</span><span class="kp">apply</span><span class="p">(</span>
+  X<span class="o">=</span>workData<span class="p">,</span>
+  MARGIN<span class="o">=</span><span class="m">1</span><span class="p">,</span>
+  FUN<span class="o">=</span><span class="kr">function</span><span class="p">(</span>data<span class="p">)</span> fullValueCalculation<span class="p">(</span>data<span class="p">[</span><span class="s">"CROPDMG"</span><span class="p">],</span>data<span class="p">[</span><span class="s">"CROPDMGEXP"</span><span class="p">])</span>
+<span class="p">)</span>
+
+cropDmgValues <span class="o">&lt;-</span> <span class="kp">as.numeric</span><span class="p">(</span><span class="kp">as.character</span><span class="p">(</span>cropDmgValues<span class="p">))</span>
+
+workData<span class="o">$</span>CROPDMGVAL <span class="o">&lt;-</span> cropDmgValues
+
+eventCropDmg <span class="o">&lt;-</span> aggregate<span class="p">(</span>data<span class="o">=</span>workData<span class="p">,</span> CROPDMGVAL<span class="o">~</span>EVTYPE<span class="p">,</span> FUN<span class="o">=</span><span class="kp">sum</span><span class="p">)</span>
+
+rankedEventCropDmg <span class="o">&lt;-</span> eventCropDmg<span class="p">[</span><span class="kp">order</span><span class="p">(</span><span class="o">-</span>eventCropDmg<span class="o">$</span>CROPDMGVAL<span class="p">),]</span>
+</pre></div>
+
+<p>The following are the top 10 weather phenomena that costed the highest in crop damage.</p>
+
+<pre><code>##                     EVTYPE CROPDMGVAL
+## 1                  DROUGHT  1.397e+10
+## 2                    FLOOD  5.879e+09
+## 3                HURRICANE  5.515e+09
+## 4              RIVER FLOOD  5.029e+09
+## 5                ICE STORM  5.027e+09
+## 6                     HAIL  3.026e+09
+## 7           FROST/FREEZING  1.617e+09
+## 8              FLASH FLOOD  1.437e+09
+## 9  EXTREME COLD/WIND CHILL  1.313e+09
+## 10       THUNDERSTORM WIND  1.225e+09
+</code></pre>
+</li>
+<li>
+<p>The combined cost for property and crop damages are as follows:</p>
+
+<div class="highlight highlight-r"><pre>eventDmgCosts <span class="o">&lt;-</span> <span class="kp">merge</span><span class="p">(</span>eventPropDmg<span class="p">,</span> eventCropDmg<span class="p">,</span> by<span class="o">=</span><span class="kt">c</span><span class="p">(</span><span class="s">"EVTYPE"</span><span class="p">))</span>
+
+valueDmgCosts <span class="o">&lt;-</span> <span class="kp">apply</span><span class="p">(</span>
+  X<span class="o">=</span>eventDmgCosts<span class="p">,</span>
+  MARGIN<span class="o">=</span><span class="m">1</span><span class="p">,</span>
+  FUN<span class="o">=</span><span class="kr">function</span><span class="p">(</span>data<span class="p">)</span> damageCalculation<span class="p">(</span>data<span class="p">[</span><span class="s">"PROPDMGVAL"</span><span class="p">],</span>data<span class="p">[</span><span class="s">"CROPDMGVAL"</span><span class="p">])</span>
+<span class="p">)</span>
+
+valueDmgCostsNum <span class="o">&lt;-</span> <span class="kp">as.numeric</span><span class="p">(</span><span class="kp">as.character</span><span class="p">(</span>valueDmgCosts<span class="p">))</span>
+
+eventDmgCosts<span class="o">$</span>TOTAL <span class="o">&lt;-</span> valueDmgCostsNum
+
+rankedEventDmgCosts <span class="o">&lt;-</span> eventDmgCosts<span class="p">[</span><span class="kp">order</span><span class="p">(</span><span class="o">-</span>eventDmgCosts<span class="o">$</span>TOTAL<span class="p">),]</span>
+</pre></div>
+
+<p>The following are the top 10 weather phenomena costing the highest in damages.</p>
+
+<pre><code>##               EVTYPE PROPDMGVAL CROPDMGVAL     TOTAL
+## 1              FLOOD  1.450e+11  5.879e+09 1.509e+11
+## 2          HURRICANE  8.476e+10  5.515e+09 9.028e+10
+## 3            TORNADO  5.854e+10  4.175e+08 5.896e+10
+## 4        STORM SURGE  4.796e+10  8.550e+05 4.796e+10
+## 5               HAIL  1.597e+10  3.026e+09 1.900e+10
+## 6        FLASH FLOOD  1.673e+10  1.437e+09 1.817e+10
+## 7            DROUGHT  1.046e+09  1.397e+10 1.502e+10
+## 8  THUNDERSTORM WIND  9.762e+09  1.225e+09 1.099e+10
+## 9        RIVER FLOOD  5.119e+09  5.029e+09 1.015e+10
+## 10         ICE STORM  3.972e+09  5.027e+09 8.999e+09
+</code></pre>
+</li>
+<li>
+<p>The following graphs presents the above data.</p>
+
+<div class="highlight highlight-r"><pre>  eventPropDmgPlot <span class="o">&lt;-</span> ggplot<span class="p">(</span>
+          rankedEventPropDmg<span class="p">[</span><span class="m">1</span><span class="o">:</span><span class="m">10</span><span class="p">,],</span>
+          aes<span class="p">(</span>
+            x<span class="o">=</span>reorder<span class="p">(</span>EVTYPE<span class="p">,</span> <span class="o">-</span>PROPDMGVAL<span class="p">),</span>
+            y<span class="o">=</span>PROPDMGVAL
+          <span class="p">)</span>
+        <span class="p">)</span> <span class="o">+</span>
+        ggtitle<span class="p">(</span><span class="s">"Property Damages"</span><span class="p">)</span> <span class="o">+</span>
+        geom_bar<span class="p">(</span>stat <span class="o">=</span> <span class="s">"identity"</span><span class="p">)</span> <span class="o">+</span>
+        geom_text<span class="p">(</span>
+          aes<span class="p">(</span>
+            label<span class="o">=</span><span class="kp">ceiling</span><span class="p">(</span>PROPDMGVAL<span class="p">),</span>
+            hjust<span class="o">=</span><span class="m">0.5</span><span class="p">,</span>
+            vjust<span class="o">=</span><span class="m">1.25</span>
+          <span class="p">),</span>
+          color<span class="o">=</span><span class="s">"red"</span>
+        <span class="p">)</span> <span class="o">+</span>
+        xlab<span class="p">(</span><span class="s">"Weather Phenomena"</span><span class="p">)</span> <span class="o">+</span>
+        ylab<span class="p">(</span><span class="s">"Total Property Damage"</span><span class="p">)</span>
+
+  eventCropDmgPlot <span class="o">&lt;-</span> ggplot<span class="p">(</span>
+          rankedEventCropDmg<span class="p">[</span><span class="m">1</span><span class="o">:</span><span class="m">10</span><span class="p">,],</span>
+          aes<span class="p">(</span>
+            x<span class="o">=</span>reorder<span class="p">(</span>EVTYPE<span class="p">,</span> <span class="o">-</span>CROPDMGVAL<span class="p">),</span>
+            y<span class="o">=</span>CROPDMGVAL
+          <span class="p">)</span>
+        <span class="p">)</span> <span class="o">+</span>
+        ggtitle<span class="p">(</span><span class="s">"Crop Damages"</span><span class="p">)</span> <span class="o">+</span>
+        geom_bar<span class="p">(</span>stat <span class="o">=</span> <span class="s">"identity"</span><span class="p">)</span> <span class="o">+</span>
+        geom_text<span class="p">(</span>
+          aes<span class="p">(</span>
+            label<span class="o">=</span><span class="kp">ceiling</span><span class="p">(</span>CROPDMGVAL<span class="p">),</span>
+            hjust<span class="o">=</span><span class="m">0.5</span><span class="p">,</span>
+            vjust<span class="o">=</span><span class="m">1.25</span>
+          <span class="p">),</span>
+          color<span class="o">=</span><span class="s">"red"</span>
+        <span class="p">)</span> <span class="o">+</span>
+        xlab<span class="p">(</span><span class="s">"Weather Phenomena"</span><span class="p">)</span> <span class="o">+</span>
+        ylab<span class="p">(</span><span class="s">"Total Crop Damage"</span><span class="p">)</span>
+
+  eventTotalDmgPlot <span class="o">&lt;-</span> ggplot<span class="p">(</span>
+          rankedEventDmgCosts<span class="p">[</span><span class="m">1</span><span class="o">:</span><span class="m">10</span><span class="p">,],</span>
+          aes<span class="p">(</span>
+            x<span class="o">=</span>reorder<span class="p">(</span>EVTYPE<span class="p">,</span> <span class="o">-</span>TOTAL<span class="p">),</span>
+            y<span class="o">=</span>TOTAL
+          <span class="p">)</span>
+        <span class="p">)</span> <span class="o">+</span>
+        ggtitle<span class="p">(</span><span class="s">"Top 10 Weather Phenomena with Highest Damage Costs"</span><span class="p">)</span> <span class="o">+</span>
+        geom_bar<span class="p">(</span>stat <span class="o">=</span> <span class="s">"identity"</span><span class="p">)</span> <span class="o">+</span>
+        geom_text<span class="p">(</span>
+          aes<span class="p">(</span>
+            label<span class="o">=</span><span class="kp">ceiling</span><span class="p">(</span>TOTAL<span class="p">),</span>
+            hjust<span class="o">=</span><span class="m">0.5</span><span class="p">,</span>
+            vjust<span class="o">=</span><span class="m">1.25</span>
+          <span class="p">),</span>
+          color<span class="o">=</span><span class="s">"red"</span>
+        <span class="p">)</span> <span class="o">+</span>
+        xlab<span class="p">(</span><span class="s">"Weather Phenomena"</span><span class="p">)</span> <span class="o">+</span>
+        ylab<span class="p">(</span><span class="s">"Total Damage"</span><span class="p">)</span>
+
+  grid.arrange<span class="p">(</span>eventPropDmgPlot<span class="p">,</span> eventCropDmgPlot<span class="p">,</span> eventTotalDmgPlot<span class="p">,</span> ncol<span class="o">=</span><span class="m">1</span><span class="p">)</span>
+</pre></div>
+
+<p><img src="https://raw.githubusercontent.com/EvoDest/RepData_PeerAssessment2/master/figure/unnamed-chunk-31.png" alt=""></p>
+
+<ol>
+<li>Preparation of working data for time-series trend of the weather phenomena contributing to at least 75% of damage costs.</li>
+</ol>
+<div class="highlight highlight-r"><pre>    eventDamageCosts <span class="o">&lt;-</span> <span class="kp">apply</span><span class="p">(</span>
+      X<span class="o">=</span>workData<span class="p">,</span>
+      MARGIN<span class="o">=</span><span class="m">1</span><span class="p">,</span>
+      FUN<span class="o">=</span><span class="kr">function</span><span class="p">(</span>data<span class="p">)</span> damageCalculation<span class="p">(</span>data<span class="p">[</span><span class="s">"PROPDMGVAL"</span><span class="p">],</span>data<span class="p">[</span><span class="s">"CROPDMGVAL"</span><span class="p">])</span>
+    <span class="p">)</span>
+
+    eventDamageCostsNum <span class="o">&lt;-</span> <span class="kp">as.numeric</span><span class="p">(</span><span class="kp">as.character</span><span class="p">(</span>eventDamageCosts<span class="p">))</span>
+
+    workData<span class="o">$</span>DAMAGETOTAL <span class="o">&lt;-</span> eventDamageCostsNum
+
+    eventDamageByYear <span class="o">&lt;-</span> aggregate<span class="p">(</span>data<span class="o">=</span>workData<span class="p">,</span> DAMAGETOTAL<span class="o">~</span>EVTYPE<span class="o">+</span>EVENTYEAR<span class="p">,</span> FUN<span class="o">=</span><span class="kp">sum</span><span class="p">)</span>
+
+    eventDamageByYearOrdered <span class="o">&lt;-</span> eventDamageByYear<span class="p">[</span><span class="kp">order</span><span class="p">(</span><span class="o">-</span>eventDamageByYear<span class="o">$</span>DAMAGETOTAL<span class="p">),]</span>
+</pre></div>
+</li>
+</ol><h2>
+<a name="results" class="anchor" href="#results"><span class="octicon octicon-link"></span></a>Results</h2>
+
+<p>The impact of most severe weather phenomena causing the greatest (top 10) in casualties and damages are summarised here.</p>
+
+<ol>
+<li>
+<p>Data summary</p>
+
+<ol>
+<li>Casualty Rate</li>
+</ol>
+<div class="highlight highlight-r"><pre>  <span class="kp">summary</span><span class="p">(</span>rankedEventCasualties<span class="p">[</span><span class="m">1</span><span class="o">:</span><span class="m">10</span><span class="p">,</span><span class="m">2</span><span class="o">:</span><span class="m">4</span><span class="p">])</span>
+</pre></div>
+
+<pre><code>##    FATALITIES      INJURIES         TOTAL      
+##  Min.   :  90   Min.   : 1471   Min.   : 1696  
+##  1st Qu.: 344   1st Qu.: 1875   1st Qu.: 2386  
+##  Median : 764   Median : 3863   Median : 4830  
+##  Mean   :1230   Mean   :12909   Mean   :14139  
+##  3rd Qu.:1093   3rd Qu.: 6774   3rd Qu.: 8334  
+##  Max.   :5658   Max.   :91364   Max.   :97022
+</code></pre>
+
+<ol>
+<li>Damage Costs</li>
+</ol>
+<div class="highlight highlight-r"><pre>  <span class="kp">summary</span><span class="p">(</span>rankedEventDmgCosts<span class="p">[</span><span class="m">1</span><span class="o">:</span><span class="m">10</span><span class="p">,</span><span class="m">2</span><span class="o">:</span><span class="m">4</span><span class="p">])</span>
+</pre></div>
+
+<pre><code>##    PROPDMGVAL         CROPDMGVAL           TOTAL         
+##  Min.   :1.05e+09   Min.   :8.55e+05   Min.   :9.00e+09  
+##  1st Qu.:6.28e+09   1st Qu.:1.28e+09   1st Qu.:1.20e+10  
+##  Median :1.64e+10   Median :4.03e+09   Median :1.86e+10  
+##  Mean   :3.89e+10   Mean   :4.15e+09   Mean   :4.30e+10  
+##  3rd Qu.:5.59e+10   3rd Qu.:5.39e+09   3rd Qu.:5.62e+10  
+##  Max.   :1.45e+11   Max.   :1.40e+10   Max.   :1.51e+11
+</code></pre>
+</li>
+<li>
+<p>Weather phenomena within the top 10 most servere, causing at least 75% of the calculated harm (casualties or damages)</p>
+
+<p>A. Impact to human lives: Fatalities</p>
+
+<div class="highlight highlight-r"><pre>  rankedEventCasualties<span class="p">[</span>rankedEventCasualties<span class="o">$</span>FATALITIES <span class="o">&gt;=</span> quantile<span class="p">(</span>rankedEventCasualties<span class="p">[</span><span class="m">1</span><span class="o">:</span><span class="m">10</span><span class="p">,</span><span class="m">2</span><span class="p">],</span> <span class="kt">c</span><span class="p">(</span><span class="m">0.75</span><span class="p">)),]</span>
+</pre></div>
+
+<pre><code>##           EVTYPE FATALITIES INJURIES TOTAL
+## 1        TORNADO       5658    91364 97022
+## 3 EXCESSIVE HEAT       1999     6680  8679
+## 6           HEAT       1118     2494  3612
+</code></pre>
+
+<p>B. Impact to human lives: Injuries</p>
+
+<div class="highlight highlight-r"><pre>  rankedEventCasualties<span class="p">[</span>rankedEventCasualties<span class="o">$</span>INJURIES <span class="o">&gt;=</span> quantile<span class="p">(</span>rankedEventCasualties<span class="p">[</span><span class="m">1</span><span class="o">:</span><span class="m">10</span><span class="p">,</span><span class="m">3</span><span class="p">],</span> <span class="kt">c</span><span class="p">(</span><span class="m">0.75</span><span class="p">)),]</span>
+</pre></div>
+
+<pre><code>##              EVTYPE FATALITIES INJURIES TOTAL
+## 1           TORNADO       5658    91364 97022
+## 2 THUNDERSTORM WIND        710     9508 10218
+## 4             FLOOD        495     6806  7301
+</code></pre>
+
+<p>C. Impact to human lives: Total</p>
+
+<div class="highlight highlight-r"><pre>  impactCasualtiesTotal <span class="o">&lt;-</span> rankedEventCasualties<span class="p">[</span>rankedEventCasualties<span class="o">$</span>TOTAL <span class="o">&gt;=</span> quantile<span class="p">(</span>rankedEventCasualties<span class="p">[</span><span class="m">1</span><span class="o">:</span><span class="m">10</span><span class="p">,</span><span class="m">4</span><span class="p">],</span> <span class="kt">c</span><span class="p">(</span><span class="m">0.75</span><span class="p">)),]</span>
+  noOfCasualties3rdQuantile <span class="o">&lt;-</span> <span class="kp">nrow</span><span class="p">(</span>impactCasualtiesTotal<span class="p">)</span>
+</pre></div>
+
+<pre><code>##              EVTYPE FATALITIES INJURIES TOTAL
+## 1           TORNADO       5658    91364 97022
+## 2 THUNDERSTORM WIND        710     9508 10218
+## 3    EXCESSIVE HEAT       1999     6680  8679
+</code></pre>
+
+<p>D. Impact to infrastructure: Properties</p>
+
+<div class="highlight highlight-r"><pre>  rankedEventDmgCosts<span class="p">[</span>rankedEventDmgCosts<span class="o">$</span>PROPDMGVAL <span class="o">&gt;=</span> quantile<span class="p">(</span>rankedEventDmgCosts<span class="p">[</span><span class="m">1</span><span class="o">:</span><span class="m">10</span><span class="p">,</span><span class="m">2</span><span class="p">],</span> <span class="kt">c</span><span class="p">(</span><span class="m">0.75</span><span class="p">)),]</span>
+</pre></div>
+
+<pre><code>##      EVTYPE PROPDMGVAL CROPDMGVAL     TOTAL
+## 1     FLOOD  1.450e+11  5.879e+09 1.509e+11
+## 2 HURRICANE  8.476e+10  5.515e+09 9.028e+10
+## 3   TORNADO  5.854e+10  4.175e+08 5.896e+10
+</code></pre>
+
+<p>E. Impact to infrastructure: Crops</p>
+
+<div class="highlight highlight-r"><pre>  rankedEventDmgCosts<span class="p">[</span>rankedEventDmgCosts<span class="o">$</span>CROPDMGVAL <span class="o">&gt;=</span> quantile<span class="p">(</span>rankedEventDmgCosts<span class="p">[</span><span class="m">1</span><span class="o">:</span><span class="m">10</span><span class="p">,</span><span class="m">3</span><span class="p">],</span> <span class="kt">c</span><span class="p">(</span><span class="m">0.75</span><span class="p">)),]</span>
+</pre></div>
+
+<pre><code>##      EVTYPE PROPDMGVAL CROPDMGVAL     TOTAL
+## 1     FLOOD  1.450e+11  5.879e+09 1.509e+11
+## 2 HURRICANE  8.476e+10  5.515e+09 9.028e+10
+## 7   DROUGHT  1.046e+09  1.397e+10 1.502e+10
+</code></pre>
+
+<p>F. Impact to infrastructure: Total</p>
+
+<div class="highlight highlight-r"><pre>  impactDamagesTotal <span class="o">&lt;-</span> rankedEventDmgCosts<span class="p">[</span>rankedEventDmgCosts<span class="o">$</span>TOTAL <span class="o">&gt;=</span> quantile<span class="p">(</span>rankedEventDmgCosts<span class="p">[</span><span class="m">1</span><span class="o">:</span><span class="m">10</span><span class="p">,</span><span class="m">4</span><span class="p">],</span> <span class="kt">c</span><span class="p">(</span><span class="m">0.75</span><span class="p">)),]</span>
+  noOfDamages3rdQuantile <span class="o">&lt;-</span> <span class="kp">nrow</span><span class="p">(</span>impactDamagesTotal<span class="p">)</span>
+</pre></div>
+
+<pre><code>##      EVTYPE PROPDMGVAL CROPDMGVAL     TOTAL
+## 1     FLOOD  1.450e+11  5.879e+09 1.509e+11
+## 2 HURRICANE  8.476e+10  5.515e+09 9.028e+10
+## 3   TORNADO  5.854e+10  4.175e+08 5.896e+10
+</code></pre>
+</li>
+<li>
+<p>Visual Representation of weather phenomena causing at least 75% of the total calculated harm (casualties or damages) and the time-series trend for years in record.</p>
+
+<div class="highlight highlight-r"><pre>    casualtyPlot <span class="o">&lt;-</span> ggplot<span class="p">(</span>
+          rankedEventCasualties<span class="p">[</span><span class="m">1</span><span class="o">:</span><span class="m">3</span><span class="p">,],</span>
+          aes<span class="p">(</span>
+            x<span class="o">=</span>reorder<span class="p">(</span>EVTYPE<span class="p">,</span> <span class="o">-</span>TOTAL<span class="p">),</span>
+            y<span class="o">=</span>TOTAL<span class="p">,</span>
+            <span class="kp">factor</span><span class="p">(</span>TOTAL<span class="p">)</span>
+          <span class="p">)</span>
+        <span class="p">)</span> <span class="o">+</span>
+        ggtitle<span class="p">(</span><span class="s">"Weather Phenomena causing at least 75% of Total Casualties"</span><span class="p">)</span> <span class="o">+</span>
+        geom_bar<span class="p">(</span>stat <span class="o">=</span> <span class="s">"identity"</span><span class="p">)</span> <span class="o">+</span>
+        geom_text<span class="p">(</span>
+          aes<span class="p">(</span>
+            label<span class="o">=</span><span class="kp">ceiling</span><span class="p">(</span>TOTAL<span class="p">),</span>
+            hjust<span class="o">=</span><span class="m">0.5</span><span class="p">,</span>
+            vjust<span class="o">=</span><span class="m">-0.5</span>
+          <span class="p">)</span>
+        <span class="p">)</span> <span class="o">+</span>
+        xlab<span class="p">(</span><span class="s">"Weather Phenomena"</span><span class="p">)</span> <span class="o">+</span>
+        ylab<span class="p">(</span><span class="s">"Total Casualty"</span><span class="p">)</span>
+
+    damagePlot <span class="o">&lt;-</span> ggplot<span class="p">(</span>
+          rankedEventDmgCosts<span class="p">[</span><span class="m">1</span><span class="o">:</span><span class="m">3</span><span class="p">,],</span>
+          aes<span class="p">(</span> 
+            x<span class="o">=</span>reorder<span class="p">(</span>EVTYPE<span class="p">,</span> <span class="o">-</span>TOTAL<span class="p">),</span>
+            y<span class="o">=</span>TOTAL
+          <span class="p">)</span>
+        <span class="p">)</span> <span class="o">+</span>
+        ggtitle<span class="p">(</span><span class="s">"Weather Phenomena causing at least 75% of Total Damages"</span><span class="p">)</span> <span class="o">+</span>
+        geom_bar<span class="p">(</span>stat <span class="o">=</span> <span class="s">"identity"</span><span class="p">)</span> <span class="o">+</span>
+        geom_text<span class="p">(</span>
+          aes<span class="p">(</span>
+            label<span class="o">=</span><span class="kp">ceiling</span><span class="p">(</span>TOTAL<span class="p">),</span>
+            hjust<span class="o">=</span><span class="m">0.5</span><span class="p">,</span>
+            vjust<span class="o">=</span><span class="m">-0.5</span>
+          <span class="p">)</span>
+        <span class="p">)</span> <span class="o">+</span>
+        xlab<span class="p">(</span><span class="s">"Weather Phenomena"</span><span class="p">)</span> <span class="o">+</span>
+        ylab<span class="p">(</span><span class="s">"Total Cost"</span><span class="p">)</span>
+
+    casualtyTrend <span class="o">&lt;-</span> ggplot<span class="p">(</span>
+          data<span class="o">=</span>eventCasualtyByYearOrdered<span class="p">[</span>eventCasualtyByYearOrdered<span class="o">$</span>EVTYPE <span class="o">%in%</span> impactCasualtiesTotal<span class="o">$</span>EVTYPE<span class="p">,],</span>
+          aes<span class="p">(</span>
+            x<span class="o">=</span>EVENTYEAR<span class="p">,</span>
+            y<span class="o">=</span>CASUALTYTOTAL<span class="p">,</span>
+            group<span class="o">=</span>EVTYPE<span class="p">,</span>
+            color<span class="o">=</span>EVTYPE
+          <span class="p">)</span>
+        <span class="p">)</span> <span class="o">+</span>
+        ggtitle<span class="p">(</span><span class="s">"Trend of Weather Phenomena causing 75% of Casualties"</span><span class="p">)</span> <span class="o">+</span>
+        geom_line<span class="p">()</span> <span class="o">+</span>
+        geom_point<span class="p">()</span> <span class="o">+</span>
+        geom_smooth<span class="p">(</span>method<span class="o">=</span><span class="s">"loess"</span><span class="p">)</span> <span class="o">+</span>
+        xlab<span class="p">(</span><span class="s">"Years"</span><span class="p">)</span> <span class="o">+</span>
+        ylab<span class="p">(</span><span class="s">"Casualty Rate"</span><span class="p">)</span>
+
+    damageTrend <span class="o">&lt;-</span> ggplot<span class="p">(</span>
+          data<span class="o">=</span>eventDamageByYearOrdered<span class="p">[</span>eventDamageByYearOrdered<span class="o">$</span>EVTYPE <span class="o">%in%</span> impactDamagesTotal<span class="o">$</span>EVTYPE<span class="p">,],</span>
+          aes<span class="p">(</span>
+            x<span class="o">=</span>EVENTYEAR<span class="p">,</span>
+            y<span class="o">=</span>DAMAGETOTAL<span class="p">,</span>
+            group<span class="o">=</span>EVTYPE<span class="p">,</span>
+            color<span class="o">=</span>EVTYPE
+          <span class="p">)</span>
+        <span class="p">)</span> <span class="o">+</span>
+        ggtitle<span class="p">(</span><span class="s">"Trend of Weather Phenomena causing 75% of Damages"</span><span class="p">)</span> <span class="o">+</span>
+        geom_line<span class="p">()</span> <span class="o">+</span>
+        geom_point<span class="p">()</span> <span class="o">+</span>
+        geom_smooth<span class="p">(</span>method<span class="o">=</span><span class="s">"loess"</span><span class="p">)</span> <span class="o">+</span>
+        xlab<span class="p">(</span><span class="s">"Years"</span><span class="p">)</span> <span class="o">+</span>
+        ylab<span class="p">(</span><span class="s">"Damage Costs"</span><span class="p">)</span>
+
+    grid.arrange<span class="p">(</span>casualtyPlot<span class="p">,</span> damagePlot<span class="p">,</span> casualtyTrend<span class="p">,</span> damageTrend<span class="p">,</span> ncol<span class="o">=</span><span class="m">2</span><span class="p">)</span>
+</pre></div>
+
+<p><img src="https://raw.githubusercontent.com/EvoDest/RepData_PeerAssessment2/master/figure/unnamed-chunk-43.png" alt=""></p>
+</li>
+</ol><h2>
+<a name="reproducing-this-analysis" class="anchor" href="#reproducing-this-analysis"><span class="octicon octicon-link"></span></a>Reproducing this Analysis</h2>
+
+<p>The setup used to perform this analysis is as follows:</p>
+
+<div class="highlight highlight-r"><pre>    sessionInfo<span class="p">()</span>
+</pre></div>
+
+<pre><code>## R version 3.1.0 (2014-04-10)
+## Platform: x86_64-w64-mingw32/x64 (64-bit)
+## 
+## locale:
+## [1] LC_COLLATE=English_Singapore.1252  LC_CTYPE=English_Singapore.1252   
+## [3] LC_MONETARY=English_Singapore.1252 LC_NUMERIC=C                      
+## [5] LC_TIME=English_Singapore.1252    
+## 
+## attached base packages:
+## [1] grid      stats     graphics  grDevices utils     datasets  methods  
+## [8] base     
+## 
+## other attached packages:
+## [1] lubridate_1.3.3 gridExtra_0.9.1 ggplot2_1.0.0   knitr_1.6      
+## 
+## loaded via a namespace (and not attached):
+##  [1] codetools_0.2-8  colorspace_1.2-4 digest_0.6.4     evaluate_0.5.5  
+##  [5] formatR_0.10     gtable_0.1.2     labeling_0.2     MASS_7.3-31     
+##  [9] memoise_0.2.1    munsell_0.4.2    plyr_1.8.1       proto_0.3-10    
+## [13] Rcpp_0.11.2      reshape2_1.4     scales_0.2.4     stringr_0.6.2   
+## [17] tools_3.1.0
+</code></pre>
+        </section>
+
+        <aside id="sidebar">
+          <a href="https://github.com/EvoDest/RepData_PeerAssessment2/zipball/master" class="button">
+            <small>Download</small>
+            .zip file
+          </a>
+          <a href="https://github.com/EvoDest/RepData_PeerAssessment2/tarball/master" class="button">
+            <small>Download</small>
+            .tar.gz file
+          </a>
+
+          <p class="repo-owner"><a href="https://github.com/EvoDest/RepData_PeerAssessment2"></a> is maintained by <a href="https://github.com/EvoDest">EvoDest</a>.</p>
+
+          <p>This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the Architect theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.</p>
+        </aside>
+      </div>
+    </div>
+
+  
+  </body>
+</html>
